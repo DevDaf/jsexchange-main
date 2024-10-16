@@ -1,0 +1,63 @@
+const currencyOne = document.getElementById("currency-one");
+const currencyTwo = document.getElementById("currency-two");
+const amountOne = document.getElementById("amount-one");
+const amountTwo = document.getElementById("amount-two");
+const rateDisplay = document.getElementById("rate");
+const swapButton = document.getElementById("swap");
+
+let rates = {};
+
+// Fetch exchange rates from the API
+async function fetchExchangeRates() {
+    try {
+        const response = await fetch("https://open.er-api.com/v6/latest/USD");
+        const data = await response.json();
+        rates = data.rates;
+        calculate(); // Initial calculation after fetching rates
+    } catch (error) {
+        console.error("Error fetching exchange rates:", error);
+    }
+}
+
+// Calculate the exchange rate and update the output
+function calculate() {
+    const currencyOneCode = currencyOne.value;
+    const currencyTwoCode = currencyTwo.value;
+
+    const rate = rates[currencyTwoCode] / rates[currencyOneCode];
+    rateDisplay.innerText = `1 ${currencyOneCode} = ${rate.toFixed(4)} ${currencyTwoCode}`;
+
+    const amountOneValue = parseFloat(amountOne.value);
+    if (!isNaN(amountOneValue)) {
+        amountTwo.value = (amountOneValue * rate).toFixed(2);
+    } else {
+        amountTwo.value = ""; // Clear if the input is invalid
+    }
+}
+
+// Event listeners for currency selection and amount input
+currencyOne.addEventListener("change", calculate);
+currencyTwo.addEventListener("change", calculate);
+amountOne.addEventListener("input", calculate);
+
+// Swap currencies and convert the amounts accordingly
+swapButton.addEventListener("click", () => {
+    // Store current values
+    const tempCurrency = currencyOne.value;
+    const tempAmount = amountOne.value;
+
+    // Swap the currencies
+    currencyOne.value = currencyTwo.value;
+    currencyTwo.value = tempCurrency;
+
+    // Calculate the new amount for currency one
+    const rate = rates[currencyTwo.value] / rates[tempCurrency]; // New rate after swapping
+    const convertedAmount = (parseFloat(tempAmount) / rate).toFixed(2); // Convert amount based on the new rate
+
+    // Update amounts
+    amountOne.value = convertedAmount; // Amount for currency one
+    calculate(); // Recalculate for currency two
+});
+
+// Initial fetch and calculation
+fetchExchangeRates();
